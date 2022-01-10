@@ -269,7 +269,7 @@ class ServerClient(ClientSocket):
         file_path = self.parent().server_file(file_name)
 
         # Write the file received to disk
-        decompressed_content = bz2.decompress(query.content)
+        decompressed_content = query.content
         with open(file_path, "wb") as output_file:
             output_file.write(decompressed_content)
         self._logger.info("Saved file %s" % file_name)
@@ -286,7 +286,7 @@ class ServerClient(ClientSocket):
         reply = DownloadFile.Reply(query)
         with open(file_path, "rb") as input_file:
             uncompressed_content = input_file.read()
-        reply.content = bz2.compress(uncompressed_content)
+        reply.content = uncompressed_content
         self._logger.info("Loaded file %s" % file_name)
         self.send_packet(reply)
 
