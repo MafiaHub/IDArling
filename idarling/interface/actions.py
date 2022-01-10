@@ -212,7 +212,7 @@ class OpenActionHandler(ActionHandler):
         file_path = os.path.join(self._plugin.config["files_dir"], file_name)
 
         # Write the file to disk
-        decompressed_content = bz2.decompress(reply.content)
+        decompressed_content = reply.content
         with open(file_path, "wb") as output_file:
             output_file.write(decompressed_content)
         self._plugin.logger.info("Saved file %s" % file_name)
@@ -305,7 +305,7 @@ class SaveActionHandler(ActionHandler):
 
         with open(input_path, "rb") as input_file:
             uncompressed_content = input_file.read()
-        packet.content = bz2.compress(uncompressed_content)
+        packet.content = uncompressed_content
 
         # Create the upload progress dialog
         text = "Uploading database to server, please wait..."
