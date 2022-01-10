@@ -125,8 +125,10 @@ class ActionHandler(ida_kernwin.action_handler_t):
     @staticmethod
     def _on_progress(progress, count, total):
         """Called when some progress has been made."""
-        progress.setRange(0, total)
-        progress.setValue(count)
+
+        # Divide by 10 to avoid out of range exception.
+        progress.setRange(0.0, total/10)
+        progress.setValue(count/10)
 
     def __init__(self, plugin):
         super(ActionHandler, self).__init__()
