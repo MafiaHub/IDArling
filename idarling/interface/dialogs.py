@@ -15,6 +15,8 @@ from functools import partial
 import logging, time
 import binascii
 import platform
+import string
+import random
 
 import ida_loader
 import ida_nalt
@@ -60,6 +62,8 @@ from ..shared.commands import (
 )
 from ..shared.models import Project, Binary, Snapshot
 
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 class OpenDialog(QDialog):
     """This dialog is shown to user to select which remote snapshot to load."""
@@ -481,7 +485,7 @@ class SaveDialog(OpenDialog):
         )
         self._create_snapshot_button.setEnabled(False)
         self._create_snapshot_button.clicked.connect(
-            self._create_snapshot_clicked
+            self._create_snapshot_accepted
         )
         self._snapshots_layout.addWidget(self._create_snapshot_button)
 
@@ -618,7 +622,6 @@ class SaveDialog(OpenDialog):
         self._accept_button.setEnabled(False)
 
     ##### SNAPSHOTS #####
-
     def _refresh_snapshots(self):
         super(SaveDialog, self)._refresh_snapshots()
         for row in range(self._snapshots_table.rowCount()):
@@ -626,34 +629,12 @@ class SaveDialog(OpenDialog):
                 item = self._snapshots_table.item(row, col)
                 item.setFlags(item.flags() | Qt.ItemIsEnabled)
 
-    def _create_snapshot_clicked(self):
-        """Called when the create snapshot button is clicked."""
-        dialog = CreateSnapshotDialog(self._plugin)
-        dialog.accepted.connect(
-            partial(self._create_snapshot_accepted, dialog)
-        )
-        dialog.exec_()
-
-    def _create_snapshot_accepted(self, dialog):
+    def _create_snapshot_accepted(self):
         """Called when the snapshot creation dialog is accepted."""
-        name = dialog.get_result()
-
-        # Ensure we don't already have a snapshot with that name
-        if any(snapshot.name == name for snapshot in self._snapshots):
-            failure = QMessageBox()
-            failure.setIcon(QMessageBox.Warning)
-            failure.setStandardButtons(QMessageBox.Ok)
-            failure.setText("A snapshot with that name already exists!")
-            failure.setWindowTitle("New Snapshot")
-            icon_path = self._plugin.plugin_resource("upload.png")
-            failure.setWindowIcon(QIcon(icon_path))
-            failure.exec_()
-            return
-
         # Get all the information we need and sent it to the server
         date_format = "%Y/%m/%d %H:%M"
         date = datetime.datetime.now().strftime(date_format)
-        snapshot = Snapshot(self._project.name, self._binary.name, name, date, -1)
+        snapshot = Snapshot(self._project.name, self._binary.name, id_generator(14), date, -1)
         d = self._plugin.network.send_packet(CreateSnapshot.Query(snapshot))
         d.add_callback(partial(self._snapshot_created, snapshot))
         d.add_errback(self._plugin.logger.exception)
